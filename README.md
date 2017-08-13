@@ -3,8 +3,7 @@
     * React components
     * React flow
     * HOCs, recompose library
-    * Redux flow
-    * Redux parts - constants, action creators, reducers, middleware, store/state, selectors (reselect)
+    * Redux flow and parts - constants, action creators, reducers, middleware, store/state, selectors (reselect)
     * Epics - rxjs middleware
     * Structuring your project - redux ducks
     
@@ -136,3 +135,60 @@ export default class SystemDashboard extends PureComponent {
   }
 }
 ````
+## Redux flow and parts
+![](./pictures/redux-flow.png)
+Redux is a predictable state container.
+
+    * Redux creates a store/state.
+    * Redux then creates reducers (listeners) that listen for actions (events)
+    * React components can dispatch (publish) these events via store.dispatch
+    * Redux then reduced (recalculated) state based off the dispatched action and returns a new copy of state.
+    * Once state has been reduced, React is free to re-render based off the new state.
+    
+````
+import { Observable } from 'rxjs';
+import { ajax } from 'rxjs/observable/dom/ajax';
+import { createAction } from 'redux-actions';
+
+import { usersUrls } from '../config/server-urls.constants'
+
+export const FETCH_USER_ACCOUNT_REQUEST = 'FETCH_USER_ACCOUNT_REQUEST';
+export const FETCH_USER_ACCOUNT_SUCCESS = 'FETCH_USER_ACCOUNT_SUCCESS';
+export const FETCH_USER_ACCOUNT_FAILURE = 'FETCH_USER_ACCOUNT_FAILURE';
+
+export const fetchUserAccountRequest = createAction(FETCH_USER_ACCOUNT_REQUEST);
+export const fetchUserAccountSuccess = createAction(FETCH_USER_ACCOUNT_SUCCESS);
+export const fetchUserAccountFailure = createAction(FETCH_USER_ACCOUNT_FAILURE);
+
+export const fetchUserAccountEpic = (action$, store) =>
+  action$.ofType(FETCH_USER_ACCOUNT_REQUEST)
+    .mergeMap(() =>
+      ajax.getJSON(usersUrls.USER_ACCOUNT_URL, {
+        headers: { Cookie: store.getState().credentials.cookie },
+      })
+        .map(fetchUserAccountSuccess)
+        .catch(error => Observable.of(fetchUserAccountFailure(error)))
+    );
+
+export default function reducer(userAccount = {}, action) {
+  switch (action.type) {
+    case FETCH_USER_ACCOUNT_SUCCESS:
+      return action.payload;
+    default:
+      return userAccount;
+  }
+}
+````
+## Epics - rxjs middleware
+Epic is a function which takes a stream of actions and returns a stream of actions. Actions in, actions out.
+````
+function (action$: Observable<Action>, store: Store): Observable<Action>;
+````
+## Structuring your project - redux ducks
+It's a teсhnique to organize your constants, action creators, middleware, reducers in one module.
+A module...
+
+MUST export default a function called reducer()
+MUST export its action creators as functions
+MUST have action types in the form npm-module-or-app/reducer/ACTION_TYPE
+MAY export its action types as UPPER_SNAKE_CASE, if an external reducer needs to listen for them, or if it is a published reusable library
