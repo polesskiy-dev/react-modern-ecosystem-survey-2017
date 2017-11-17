@@ -94,7 +94,95 @@
     * meta
     
 ### Split reducer logic and combine reducers and actions/action creators/middleware to ducks, combine reducers hierarchically
+
+Example:
+
+State
+````
+state: {
+    fetching: {
+        transactionPending: false,
+        wsFetching: false, 
+    }
+}
+````
+
+Actions
+````
+    TRANSACTION_PENDING_START
+    TRANSACTION_PENDING_SUCCESS
+    TRANSACTION_PENDING_FAIL
     
+    WS_FETCHING_START
+    WS_FETCHING_SUCCESS
+    WS_FETCHING_FAIL
+    
+    //action creators will produce transactionPendingStart actions etc
+````
+
+Reducers
+````
+
+const initialTransactionPendingState = false;
+
+export default function reducer(state = initialTransactionPendingState, ({ type, payload })) { 
+    switch(type) {
+        case TRANSACTION_PENDING_START:
+            return true;
+        case TRANSACTION_PENDING_SUCCESS:
+            return false;
+        case TRANSACTION_PENDING_FAIL:
+            return false;   
+        default:
+            return state; 
+    }
+}
+
+const initialWsFetchingState = false;
+
+export default function reducer(state = initialWsFetchingState, ({ type, payload })) { 
+    switch(type) {
+        case WS_FETCHING_START:
+            return true;
+        case WS_FETCHING_SUCCESS:
+            return false;
+        case WS_FETCHING_FAIL:
+            return false;
+        default:
+            return state;            
+    }
+}  
+    
+````
+
+Combine reducers
+````
+import { combineReducers } from 'redux';
+
+import transactionReducer from './transaction-pending.duck'
+import wsFetchingReducer from './ws-fetching.duck'
+
+const fetchingReducer = combineReducers({
+    transactionPending: transactionReducer,
+    wsFetching: wsFetchingReducer,
+})
+
+export default fetchingReducer
+````
+
+index.js
+````
+import { combineReducers, createStore } from 'redux';
+
+import fetchingReducer from './fetching.duck'
+
+const rootReducer = combineReducers({
+    fetching: fetchingReducer
+})
+
+const store = createStore(rootReducer);
+````
+   
 ### Presentational and Container Components
 
 <table>
